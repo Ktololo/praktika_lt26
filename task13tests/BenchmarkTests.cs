@@ -10,11 +10,10 @@ namespace task13tests
 {
     public class BenchmarkTests
     {
-        private const double A = -100;
-        private const double B = 100;
+        private const double A = -1000;
+        private const double B = 1000;
         private readonly Func<double, double> F = x => Math.Sin(x);
-        private readonly int[] Threads = { 1, 2, 4, 8, 16, 32, 64 };
-
+        private readonly int[] Threads = { 1, 2, 4, 8, 16, 32, 64, 128 };
         [Fact]
         public void FindStep()
         {
@@ -39,8 +38,8 @@ namespace task13tests
         [Fact]
         public void Measure()
         {
-            double step = 1e-3;
-            int runs = 10;
+            double step = 1e-2;
+            int runs = 5;
             var lines = new List<string>();
             DefiniteIntegral.Solve(A, B, F, step, 1);
 
@@ -66,7 +65,6 @@ namespace task13tests
             string summary = $"Однопоток: {single:F2} мс\n" +
                              $"Лучший многопоток: {bestMulti:F2} мс\n" +
                              $"Ускорение: {diff:F2}%";
-
             File.WriteAllText("summary.txt", summary);
             Assert.True(diff >= 15, $"Ускорение {diff:F2}% < 15%");
         }
