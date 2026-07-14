@@ -14,9 +14,13 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-    - name: Restore
-      run: dotnet restore practice2025.sln
-    - name: Build
-      run: dotnet build practice2025.sln --configuration Release --no-restore
-    - name: Test
-      run: dotnet test practice2025.sln --configuration Release --no-build --verbosity normal
+    - name: Restore task02
+      run: dotnet restore task02/task02.csproj
+    - name: Build task02
+      run: dotnet build task02/task02.csproj --configuration Release --no-restore
+    - name: Restore task02Tests
+      run: dotnet restore task02Tests/task02Tests.csproj
+    - name: Build task02Tests
+      run: dotnet build task02Tests/task02Tests.csproj --configuration Release --no-restore
+    - name: Run tests
+      run: dotnet test task02Tests/task02Tests.csproj --configuration Release --no-build --verbosity normal
