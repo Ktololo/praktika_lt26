@@ -18,9 +18,9 @@ jobs:
       run: dotnet restore task07/task07.csproj
     - name: Build task07
       run: dotnet build task07/task07.csproj --configuration Release --no-restore
-    - name: Restore task07Tests
-      run: dotnet restore task07Tests/task07Tests.csproj
-    - name: Build task07Tests
-      run: dotnet build task07Tests/task07Tests.csproj --configuration Release --no-restore
+    - name: Restore task07tests
+      run: dotnet restore task07tests/task07tests.csproj
+    - name: Build task07tests
+      run: dotnet build task07tests/task07tests.csproj --configuration Release --no-restore
     - name: Run tests
-      run: dotnet test task07Tests/task07Tests.csproj --configuration Release --no-build --verbosity normal
+      run: dotnet test task07tests/task07tests.csproj --configuration Release --no-build --verbosity normal
