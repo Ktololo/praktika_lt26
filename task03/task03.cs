@@ -24,6 +24,7 @@ namespace task03
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
+
             _items.Add(item);
         }
         public bool Remove(T item)
@@ -54,6 +55,7 @@ namespace task03
         {
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count), "Количество не может быть отрицательным");
+
             for (int i = 0; i < count; i++)
             {
                 yield return start + i;
@@ -66,6 +68,7 @@ namespace task03
 
             if (keySelector == null)
                 throw new ArgumentNullException(nameof(keySelector));
+
             return _items.Where(predicate).OrderBy(keySelector);
         }
     }
