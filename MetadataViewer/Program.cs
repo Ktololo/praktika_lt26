@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Linq;
@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Анализатор метаданных библиотеки\n");
+        Console.WriteLine("Анализатор метаданных\n");
         if (args.Length == 0)
         {
             Console.WriteLine("Укажите путь к DLL");
@@ -17,46 +17,64 @@ class Program
 
         if (!File.Exists(dllPath))
         {
-            Console.WriteLine($"Файл {dllPath} не найден");
+            Console.WriteLine($"Файл не найден: {dllPath}");
             return;
         }
         try
         {
             var assembly = Assembly.LoadFrom(dllPath);
-            var types = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && !t.IsInterface)
-                .ToList();
+            Type[] types;
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine($"Ошибка загрузки типов: {ex.Message}");
+                types = ex.Types.Where(t => t != null).ToArray();
+                Console.WriteLine($"Загружено {types.Length} типов из {ex.Types.Length}");
+            }
             Console.WriteLine($"Библиотека: {assembly.GetName().Name}");
-            Console.WriteLine($"Классов: {types.Count}\n");
+            Console.WriteLine($"Всего классов: {types.Length}\n");
             foreach (var type in types)
             {
+                if (!type.IsClass || type.IsAbstract || type.IsInterface)
+                    continue;
                 Console.WriteLine($"Класс: {type.FullName}");
-                var constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
-                if (constructors.Any())
+                var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+                if (ctors.Any())
                 {
                     Console.WriteLine("Конструкторы:");
-                    foreach (var ctor in constructors)
+                    foreach (var c in ctors)
                     {
-                        var paramNames = string.Join(", ", ctor.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
-                        Console.WriteLine($"  {type.Name}({paramNames})");
+                        var p = string.Join(", ", c.GetParameters().Select(x => $"{x.ParameterType.Name} {x.Name}"));
+                        Console.WriteLine($"  {type.Name}({p})");
                     }
                 }
                 var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
                 if (methods.Any())
                 {
                     Console.WriteLine("Методы:");
-                    foreach (var method in methods)
+                    foreach (var m in methods)
                     {
-                        var paramNames = string.Join(", ", method.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
-                        Console.WriteLine($"  {method.ReturnType.Name} {method.Name}({paramNames})");
+                        var p = string.Join(", ", m.GetParameters().Select(x => $"{x.ParameterType.Name} {x.Name}"));
+                        Console.WriteLine($"  {m.ReturnType.Name} {m.Name}({p})");
                     }
                 }
                 Console.WriteLine();
             }
         }
+        catch (FileNotFoundException ex)
+        {
+            Console.WriteLine($"Файл не найден: {ex.FileName}");
+        }
+        catch (BadImageFormatException ex)
+        {
+            Console.WriteLine($"Некорректная сборка: {ex.Message}");
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка: {ex.Message}");
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
         }
     }
 }
