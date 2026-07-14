@@ -1,0 +1,30 @@
+name: CI - Build and Test
+on:
+  push:
+    branches: [ task08, main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    - name: Restore CommandLib
+      run: dotnet restore CommandLib/CommandLib.csproj
+    - name: Build CommandLib
+      run: dotnet build CommandLib/CommandLib.csproj --configuration Release --no-restore
+    - name: Restore FileSystemCommands
+      run: dotnet restore FileSystemCommands/FileSystemCommands.csproj
+    - name: Build FileSystemCommands
+      run: dotnet build FileSystemCommands/FileSystemCommands.csproj --configuration Release --no-restore
+    - name: Restore CommandRunner
+      run: dotnet restore CommandRunner/CommandRunner.csproj
+    - name: Build CommandRunner
+      run: dotnet build CommandRunner/CommandRunner.csproj --configuration Release --no-restore
+    - name: Run tests
+      run: dotnet test task08tests/task08tests.csproj --configuration Release --no-build --verbosity normal
