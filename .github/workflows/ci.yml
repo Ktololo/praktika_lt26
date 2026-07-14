@@ -27,4 +27,4 @@ jobs:
     - name: Build MetadataViewer
       run: dotnet build MetadataViewer/MetadataViewer.csproj --configuration Release --no-restore
     - name: Run tests
-      run: dotnet test task08tests/task08tests.csproj --configuration Release --no-build --verbosity normal
+      run: dotnet test task07tests/task07tests.csproj --configuration Release --no-build --verbosity normal
