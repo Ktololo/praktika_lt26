@@ -6,8 +6,10 @@ public class ServerThread
 {
     private readonly BlockingCollection<ICommand> _queue = new BlockingCollection<ICommand>();
     private readonly Thread _thread;
+    private readonly CancellationTokenSource _cts = new CancellationTokenSource();
     private bool _softStopRequested = false;
-    private bool _hardStopRequested = false; 
+    private bool _hardStopRequested = false;
+
     public ServerThread()
     {
         _thread = new Thread(Run);
@@ -32,19 +34,21 @@ public class ServerThread
     public void StopHard()
     {
         _queue.Add(new HardStopCommand(this));
+        _cts.Cancel();
     }
 
     public bool IsAlive => _thread.IsAlive;
 
     private void Run()
     {
-        while (!_hardStopRequested)
+        try
         {
-            if (_softStopRequested && _queue.Count == 0)
-                break;
-            try
+            while (!_hardStopRequested && !_cts.Token.IsCancellationRequested)
             {
-                if (_queue.TryTake(out var command, 100))
+                if (_softStopRequested && _queue.Count == 0)
+                    break;
+
+                if (_queue.TryTake(out var command, 100, _cts.Token))
                 {
                     try
                     {
@@ -56,10 +60,15 @@ public class ServerThread
                     }
                 }
             }
-            catch (ThreadInterruptedException)
-            {
-                break;
-            }
+        }
+        catch (OperationCanceledException)
+        {
+
+        }
+        finally
+        {
+            _queue.Dispose();
+            _cts.Dispose();
         }
     }
 
@@ -95,7 +104,6 @@ public class ServerThread
                 throw new InvalidOperationException("HardStop должен выполняться в том же потоке");
 
             _server._hardStopRequested = true;
-            _server._thread.Interrupt();
         }
     }
 }
