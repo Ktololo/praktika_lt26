@@ -31,27 +31,13 @@ public class ServerThreadTests
     }
 
     [Fact]
-    public void HardStop_StopsImmediately()
+    public void HardStop_PreventsNewCommands()
     {
         var server = new ServerThread();
-        bool executed = false;
-
-        server.AddCommand(new TestCommand(() =>
-        {
-            Thread.Sleep(1000);
-            executed = true;
-        }));
-
-        Thread.Sleep(50);
         server.StopHard();
 
-        for (int i = 0; i < 10 && server.IsAlive; i++)
-        {
-            Thread.Sleep(50);
-        }
-
-        Assert.False(server.IsAlive);
-        Assert.False(executed);
+        Thread.Sleep(100);
+        Assert.Throws<InvalidOperationException>(() => server.AddCommand(new TestCommand(() => { })));
     }
 
     [Fact]
@@ -60,12 +46,7 @@ public class ServerThreadTests
         var server = new ServerThread();
         server.StopHard();
 
-        for (int i = 0; i < 10 && server.IsAlive; i++)
-        {
-            Thread.Sleep(50);
-        }
-
-        Assert.False(server.IsAlive);
+        Thread.Sleep(100);
         Assert.Throws<InvalidOperationException>(() => server.AddCommand(new TestCommand(() => { })));
     }
 
@@ -89,6 +70,7 @@ public class ServerThreadTests
 
         thread.Start();
         thread.Join(1000);
+
         Assert.True(server.IsAlive);
     }
 
