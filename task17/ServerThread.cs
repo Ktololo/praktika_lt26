@@ -39,9 +39,9 @@ public class ServerThread
 
     public void StopHard()
     {
-        _hardStopRequested = true;
         lock (_lock)
         {
+            _hardStopRequested = true;
             Monitor.Pulse(_lock);
         }
     }
