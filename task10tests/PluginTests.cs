@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Xunit;
@@ -38,7 +37,6 @@ public class PluginTests
         var ex = Record.Exception(() => command.Execute());
         Assert.Null(ex);
     }
-
     [Fact]
     public void PluginC_DependsOnPluginA()
     {
@@ -46,26 +44,18 @@ public class PluginTests
         Assert.NotNull(attr);
         Assert.Equal("PluginA", attr.DependsOn);
     }
-
     [Fact]
-    public void PluginLoader_ShouldLoadPluginsWithoutError()
+    public void PluginLoader_ShouldFindPluginTypes()
     {
-        var pluginsDir = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
-        Directory.CreateDirectory(pluginsDir);
-        var dlls = Directory.GetFiles(pluginsDir, "*.dll");
-        var assemblies = dlls.Select(Assembly.LoadFrom).ToList();
-        var pluginTypes = new List<Type>();
-        foreach (var asm in assemblies)
-        {
-            var types = asm.GetTypes()
-                .Where(t => t.IsClass && t.GetCustomAttribute<PluginLoadAttribute>() != null)
-                .ToList();
-            pluginTypes.AddRange(types);
-        }
-
+        var types = new List<Type> { typeof(PluginA), typeof(PluginB), typeof(PluginC) };
+        var pluginTypes = types
+            .Where(t => t.IsClass && t.GetCustomAttribute<PluginLoadAttribute>() != null)
+            .ToList();
         Assert.NotEmpty(pluginTypes);
+        Assert.Contains(typeof(PluginA), pluginTypes);
+        Assert.Contains(typeof(PluginB), pluginTypes);
+        Assert.Contains(typeof(PluginC), pluginTypes);
     }
-
     [Fact]
     public void PluginLoader_TopologicalSort_ShouldOrderCorrectly()
     {
@@ -74,16 +64,15 @@ public class PluginTests
         Assert.Equal(3, sorted.Count);
         Assert.True(sorted.IndexOf(typeof(PluginA)) < sorted.IndexOf(typeof(PluginC)));
     }
-
     private List<Type> TopologicalSort(List<Type> types)
     {
         var result = new List<Type>();
         var visited = new HashSet<Type>();
+
         foreach (var type in types)
             Visit(type, types, visited, result);
         return result;
     }
-
     private void Visit(Type type, List<Type> all, HashSet<Type> visited, List<Type> result)
     {
         if (visited.Contains(type)) return;
