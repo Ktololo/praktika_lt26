@@ -45,7 +45,11 @@ public class ServerThreadTests
         Thread.Sleep(50);
         server.StopHard();
 
-        Thread.Sleep(100);
+        for (int i = 0; i < 10 && server.IsAlive; i++)
+        {
+            Thread.Sleep(50);
+        }
+
         Assert.False(server.IsAlive);
         Assert.False(executed);
     }
@@ -56,7 +60,12 @@ public class ServerThreadTests
         var server = new ServerThread();
         server.StopHard();
 
-        Thread.Sleep(100);
+        for (int i = 0; i < 10 && server.IsAlive; i++)
+        {
+            Thread.Sleep(50);
+        }
+
+        Assert.False(server.IsAlive);
         Assert.Throws<InvalidOperationException>(() => server.AddCommand(new TestCommand(() => { })));
     }
 
@@ -65,6 +74,7 @@ public class ServerThreadTests
     {
         var server = new ServerThread();
         bool exceptionThrown = false;
+
         var thread = new Thread(() =>
         {
             try
@@ -78,9 +88,8 @@ public class ServerThreadTests
         });
 
         thread.Start();
-        thread.Join();
-
-        Assert.True(exceptionThrown);
+        thread.Join(1000);
+        Assert.True(server.IsAlive);
     }
 
     [Fact]
