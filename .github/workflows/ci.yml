@@ -1,0 +1,39 @@
+name: CI - Build and Test
+on:
+  push:
+    branches: [ task10, main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore PluginInterface
+      run: dotnet restore PluginInterface/PluginInterface.csproj
+    - name: Build PluginInterface
+      run: dotnet build PluginInterface/PluginInterface.csproj --configuration Release --no-restore
+    - name: Restore PluginA
+      run: dotnet restore PluginA/PluginA.csproj
+    - name: Build PluginA
+      run: dotnet build PluginA/PluginA.csproj --configuration Release --no-restore
+    - name: Restore PluginB
+      run: dotnet restore PluginB/PluginB.csproj
+    - name: Build PluginB
+      run: dotnet build PluginB/PluginB.csproj --configuration Release --no-restore
+    - name: Restore PluginC
+      run: dotnet restore PluginC/PluginC.csproj
+    - name: Build PluginC
+      run: dotnet build PluginC/PluginC.csproj --configuration Release --no-restore
+    - name: Restore PluginLoader
+      run: dotnet restore PluginLoader/PluginLoader.csproj
+    - name: Build PluginLoader
+      run: dotnet build PluginLoader/PluginLoader.csproj --configuration Release --no-restore
+    - name: Run tests
+      run: dotnet test task10tests/task10tests.csproj --configuration Release --no-build --verbosity normal
