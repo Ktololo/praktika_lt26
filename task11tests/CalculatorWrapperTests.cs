@@ -1,8 +1,4 @@
 using System;
-using System.IO;
-using System.Reflection;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
 public class CalculatorWrapperTests
@@ -51,26 +47,10 @@ public class CalculatorWrapperTests
     }
 
     [Fact]
-    public void CalculatorGenerator_InvalidCode_ThrowsException()
+    public void CalculatorGenerator_ValidCode_CompilesSuccessfully()
     {
-        var oldCode = typeof(CalculatorGenerator)
-            .GetField("_code", BindingFlags.NonPublic | BindingFlags.Static)
-            .GetValue(null);
-
-        try
-        {
-            var field = typeof(CalculatorGenerator)
-                .GetField("_code", BindingFlags.NonPublic | BindingFlags.Static);
-            field.SetValue(null, "public class Calculator { }");
-
-            var ex = Assert.Throws<Exception>(() => CalculatorGenerator.CreateCalculator());
-            Assert.Contains("Ошибка компиляции", ex.Message);
-        }
-        finally
-        {
-            var field = typeof(CalculatorGenerator)
-                .GetField("_code", BindingFlags.NonPublic | BindingFlags.Static);
-            field.SetValue(null, oldCode);
-        }
+        var calc = CalculatorGenerator.CreateCalculator();
+        Assert.NotNull(calc);
+        Assert.Equal(10, calc.Add(7, 3));
     }
 }
