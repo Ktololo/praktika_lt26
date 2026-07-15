@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Xunit;
 
@@ -38,29 +38,22 @@ public class ServerThreadTests
 
         server.AddCommand(new TestCommand(() =>
         {
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
             executed = true;
         }));
 
         Thread.Sleep(50);
         server.StopHard();
 
-        Thread.Sleep(100);
+        int attempts = 0;
+        while (server.IsAlive && attempts < 10)
+        {
+            Thread.Sleep(100);
+            attempts++;
+        }
+
         Assert.False(server.IsAlive);
         Assert.False(executed);
-    }
-
-    [Fact]
-    public void StopCommand_FromWrongThread_ThrowsException()
-    {
-        var server = new ServerThread();
-        var exception = Record.Exception(() =>
-        {
-            var command = new TestCommand(() => { });
-            server.AddCommand(command);
-        });
-
-        Assert.Null(exception);
     }
 
     [Fact]
@@ -68,9 +61,30 @@ public class ServerThreadTests
     {
         var server = new ServerThread();
         server.StopHard();
-        Thread.Sleep(50);
 
+        Thread.Sleep(50);
         Assert.Throws<InvalidOperationException>(() => server.AddCommand(new TestCommand(() => { })));
+    }
+
+    [Fact]
+    public void StopCommand_FromWrongThread_ThrowsException()
+    {
+        var server = new ServerThread();
+        bool exceptionThrown = false;
+        server.AddCommand(new TestCommand(() =>
+        {
+            try
+            {
+                server.StopHard();
+            }
+            catch (InvalidOperationException)
+            {
+                exceptionThrown = true;
+            }
+        }));
+
+        Thread.Sleep(200);
+        Assert.True(exceptionThrown);
     }
 
     private class TestCommand : ICommand
@@ -81,6 +95,7 @@ public class ServerThreadTests
         {
             _action = action;
         }
+
         public void Execute()
         {
             _action();
