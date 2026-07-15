@@ -1,14 +1,15 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 
 public class ServerThread
 {
-    private readonly BlockingCollection<ICommand> _queue = new BlockingCollection<ICommand>();
+    private readonly Queue<ICommand> _queue = new Queue<ICommand>();
     private readonly Thread _thread;
-    private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-    private bool _softStopRequested = false;
-    private bool _hardStopRequested = false;
+    private readonly object _lock = new object();
+    private volatile bool _isRunning = true;
+    private volatile bool _softStopRequested = false;
+    private volatile bool _hardStopRequested = false;
 
     public ServerThread()
     {
@@ -21,55 +22,68 @@ public class ServerThread
         if (command == null)
             throw new ArgumentNullException(nameof(command));
 
-        if (_hardStopRequested)
-            throw new InvalidOperationException("Поток остановлен HardStop");
-        _queue.Add(command);
+        lock (_lock)
+        {
+            if (_hardStopRequested || !_isRunning)
+                throw new InvalidOperationException("Поток остановлен");
+
+            _queue.Enqueue(command);
+            Monitor.Pulse(_lock);
+        }
     }
 
     public void StopSoft()
     {
-        _queue.Add(new SoftStopCommand(this));
+        AddCommand(new SoftStopCommand(this));
     }
 
     public void StopHard()
     {
-        _queue.Add(new HardStopCommand(this));
-        _cts.Cancel();
+        _hardStopRequested = true;
+        lock (_lock)
+        {
+            Monitor.Pulse(_lock);
+        }
     }
 
     public bool IsAlive => _thread.IsAlive;
 
     private void Run()
     {
-        try
+        while (_isRunning && !_hardStopRequested)
         {
-            while (!_hardStopRequested && !_cts.Token.IsCancellationRequested)
+            ICommand command = null;
+
+            lock (_lock)
             {
-                if (_softStopRequested && _queue.Count == 0)
+                while (_queue.Count == 0 && !_hardStopRequested)
+                {
+                    if (_softStopRequested)
+                    {
+                        _isRunning = false;
+                        return;
+                    }
+
+                    Monitor.Wait(_lock);
+                }
+
+                if (_hardStopRequested)
                     break;
 
-                if (_queue.TryTake(out var command, 100, _cts.Token))
-                {
-                    try
-                    {
-                        command.Execute();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Ошибка выполнения: {ex.Message}");
-                    }
-                }
+                command = _queue.Dequeue();
+            }
+
+            try
+            {
+                command?.Execute();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка выполнения: {ex.Message}");
             }
         }
-        catch (OperationCanceledException)
-        {
 
-        }
-        finally
-        {
-            _queue.Dispose();
-            _cts.Dispose();
-        }
+        _isRunning = false;
     }
 
     private class SoftStopCommand : ICommand
@@ -85,6 +99,7 @@ public class ServerThread
         {
             if (Thread.CurrentThread != _server._thread)
                 throw new InvalidOperationException("SoftStop должен выполняться в том же потоке");
+
             _server._softStopRequested = true;
         }
     }
