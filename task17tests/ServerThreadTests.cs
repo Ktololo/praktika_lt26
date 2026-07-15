@@ -9,6 +9,7 @@ public class ServerThreadTests
     {
         var server = new ServerThread();
         bool executed = false;
+
         server.AddCommand(new TestCommand(() => executed = true));
         Thread.Sleep(100);
 
@@ -32,6 +33,7 @@ public class ServerThreadTests
     {
         var server = new ServerThread();
         bool executed = false;
+
         server.AddCommand(new TestCommand(() =>
         {
             Thread.Sleep(1000);
@@ -61,6 +63,7 @@ public class ServerThreadTests
     {
         var server = new ServerThread();
         bool exceptionThrown = false;
+
         server.AddCommand(new TestCommand(() =>
         {
             try
@@ -72,8 +75,28 @@ public class ServerThreadTests
                 exceptionThrown = true;
             }
         }));
+
         Thread.Sleep(200);
         Assert.True(exceptionThrown);
+    }
+
+    [Fact]
+    public void StopCommand_FromCorrectThread_DoesNotThrow()
+    {
+        var server = new ServerThread();
+        bool exceptionThrown = false;
+
+        try
+        {
+            server.StopSoft();
+            Thread.Sleep(200);
+        }
+        catch (Exception)
+        {
+            exceptionThrown = true;
+        }
+
+        Assert.False(exceptionThrown);
     }
 
     private class TestCommand : ICommand
