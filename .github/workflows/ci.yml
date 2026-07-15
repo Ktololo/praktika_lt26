@@ -1,22 +1,35 @@
 name: CI - Build and Test
+
 on:
   push:
-    branches: [ taskN, main ]
+    branches: [ task17, main ]
   pull_request:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-    - name: Restore
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-    - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal
+
+    - name: Restore task17
+      run: dotnet restore task17/task17.csproj
+
+    - name: Build task17
+      run: dotnet build task17/task17.csproj --configuration Release --no-restore
+
+    - name: Restore task17tests
+      run: dotnet restore task17tests/task17tests.csproj
+
+    - name: Build task17tests
+      run: dotnet build task17tests/task17tests.csproj --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test task17tests/task17tests.csproj --configuration Release --no-build --verbosity normal
