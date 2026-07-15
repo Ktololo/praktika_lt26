@@ -14,7 +14,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-
     - name: Restore PluginInterface
       run: dotnet restore PluginInterface/PluginInterface.csproj
     - name: Build PluginInterface
@@ -35,5 +34,9 @@ jobs:
       run: dotnet restore PluginLoader/PluginLoader.csproj
     - name: Build PluginLoader
       run: dotnet build PluginLoader/PluginLoader.csproj --configuration Release --no-restore
+    - name: Restore task10tests
+      run: dotnet restore task10tests/task10tests.csproj
+    - name: Build task10tests
+      run: dotnet build task10tests/task10tests.csproj --configuration Release --no-restore
     - name: Run tests
       run: dotnet test task10tests/task10tests.csproj --configuration Release --no-build --verbosity normal
